@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyjaaba"
+version = "0.1.0"
+description = "Score behaviour frame by frame from DeepLabCut pose: JAABA-style window features + gradient boosting"
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas", "scikit-learn>=1.3", "joblib", "pyyaml"]
+
+[project.scripts]
+pyjaaba = "pyjaaba.__main__:main"
+
+[tool.setuptools]
+packages = ["pyjaaba"]

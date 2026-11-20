@@ -1,0 +1,47 @@
+# pyJAABA project config. Copy, then edit for your DLC project.
+# Relative paths resolve against this file. Unknown keys are an error.
+# A config can start from another with `extends: other.yaml` and override keys.
+
+name: my_project
+
+# Videos live in <data_root>/<subject>/. Order of `subjects` fixes training-row order.
+# Leave `subjects` empty to treat data_root itself as one subject.
+data_root: D:/behavior
+subjects: [mouse1, mouse2, mouse3]
+video_include: ["*.avi"]           # fnmatch patterns on the file name
+video_exclude: []
+
+# The DLC csv for <stem>.avi is the one whose name starts with <stem> and contains dlc_tag.
+dlc_tag: DLC_resnet50_myproject
+dlc_individual: null               # multi-animal DLC: which individual is the subject
+
+# BORIS tabular exports; {stem} is the video name without extension.
+annotation_names: ["{stem}.avi.tsv"]
+behaviors: [approach]              # BORIS behaviours stored as labels in the cache
+behavior: approach                 # the one a model scores
+
+# Where the feature cache, models and predictions go.
+output_dir: ./pyjaaba_out
+fps_default: 30.0                  # used when a video has no BORIS export to read FPS from
+
+# DLC bodypart names for each feature role.
+keypoints:
+  snout: nose
+  neck: neck
+  center: body_center
+  tailbase: tail_base
+  quality: [nose, neck, body_center, tail_base]   # mean likelihood -> mouse_L
+  target: [cricket]                # optional; empty = no target-relative features
+
+keypoint_smoothing: 5              # centred median on x and y (frames)
+window_radii: [2, 5, 10, 20]       # frames
+
+model_name: my_model
+drop_features: [mouse_L, tgt_L]    # likelihoods measure tracking, not behaviour
+
+model: {}                          # HistGradientBoostingClassifier overrides
+postprocess:
+  threshold: 0.5
+  smooth: 5
+  fill_gap: 5
+  min_bout: 8
