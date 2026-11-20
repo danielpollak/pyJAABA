@@ -3,8 +3,7 @@
 Scores a behaviour frame by frame from DeepLabCut pose, with no video model and no
 GPU: JAABA-style window features over a handful of pose quantities, a gradient-boosted
 classifier, and bout post-processing. It writes BORIS-format exports so its calls can
-seed or be checked against manual scoring (e.g. in BORIS companion,
-`~/Documents/BORIS_companion`).
+seed or be checked against manual scoring.
 
 It is not JAABA: no GUI, no MATLAB, and the features are computed from DLC keypoints
 rather than JAABA's trackers. The name is for the method (per-frame features summarised
@@ -16,9 +15,8 @@ the model and the post-processing.
 
 ## Track record
 
-Built and validated on mouse prey-capture (`approach`) in superior_colliculus; that
-project's configs are in its `pipeline/analysis/behavior/pyjaaba/`. Leave-one-animal-out
-over 84 videos (379,083 frames, 420 bouts) against manual BORIS scoring:
+Built and validated on scoring prey approach in mouse prey-capture videos.
+Leave-one-animal-out over 84 videos from 5 mice (379,083 frames, 420 bouts) against manual BORIS scoring:
 
 | model | features | AP | precision | recall | F1 | bout recall |
 |---|---|---|---|---|---|---|
@@ -29,14 +27,13 @@ On the same test, real JAABA reached F1 0.62 and DeepEthogram 0.63.
 
 ## Install / run
 
-Needs numpy, pandas, scikit-learn, joblib and pyyaml. Either run from this folder
+Needs numpy, pandas, scikit-learn, joblib and pyyaml.
 
 ```bash
-cd ~/Documents/pyJAABA
-python -m pyjaaba <command> --config project.yaml
+git clone https://github.com/danielpollak/pyJAABA
+pip install -e pyJAABA          # then `pyjaaba <command>` anywhere
+# or, without installing: cd pyJAABA && python -m pyjaaba <command> --config project.yaml
 ```
-
-or `pip install -e ~/Documents/pyJAABA` into an environment and use `pyjaaba <command>` anywhere.
 
 ## Commands
 
@@ -108,6 +105,6 @@ covers frames $[\text{START}, \text{STOP})$. Videos without an export are never 
 python tests/test_generic.py    # synthetic project: renamed bodyparts, multi-animal csv, no-target, train/CV/predict
 ```
 
-`verify` is the real-data check: with superior_colliculus's `approach_v1.yaml` it
-reproduces that project's reference features exactly and its LOAO predictions with
-$\max|\Delta p| = 0$.
+`verify` is the real-data check: it compares a config's features and leave-one-animal-out
+predictions against arrays saved from a reference run. On the validation project above it
+reproduces them exactly ($\max|\Delta p| = 0$).
