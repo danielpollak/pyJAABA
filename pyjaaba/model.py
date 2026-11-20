@@ -16,7 +16,7 @@ from sklearn.metrics import average_precision_score
 from . import features as F
 from .config import Config, Postprocess
 
-# The hyperparameters validated in superior_colliculus; a config's `model:` overrides any of them.
+# The hyperparameters validated on the original prey-capture data; a config's `model:` overrides any of them.
 MODEL_DEFAULTS = dict(max_iter=300, learning_rate=0.1, max_leaf_nodes=31, class_weight="balanced",
                       random_state=0)
 

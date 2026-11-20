@@ -1,9 +1,8 @@
 """Video discovery, BORIS label parsing, per-frame pose features and JAABA-style window features.
 
-The feature arithmetic is unchanged from the investigation that validated the model
-(superior_colliculus, docs/behavior_approach-auto-scoring), with the bodypart names
-lifted into the config: with that project's config, `verify` reproduces the reported
-features and leave-one-animal-out predictions exactly.
+The feature arithmetic is unchanged from the investigation that validated the model,
+with the bodypart names lifted into the config: with that project's config, `verify`
+reproduces the reported features and leave-one-animal-out predictions exactly.
 
 Units are DLC **pixels** and radians; nothing is converted to physical units. A model
 is therefore tied to the camera geometry it was trained on.
