@@ -14,18 +14,45 @@ Every project-specific choice lives in one YAML file (`examples/project_template
 where the videos are, which DLC bodyparts play which role, the target, the behaviour,
 the model and the post-processing.
 
+![A held-out mouse starts and stops a hunt; manual, pyJAABA and DeepEthogram over ±5 s around the current frame](docs/figs/demo.gif)
+
+*A mouse the model never saw in training starts and stops a hunt. Below the video:
+manual scoring, pyJAABA (bars = calls, line = probability) and DeepEthogram, over
+±5 s around the current frame (red line).*
+
 ## Track record
 
 Built and validated on scoring prey approach in mouse prey-capture videos.
-Leave-one-animal-out over 84 videos from 5 mice (379,083 frames, 420 bouts) against
-manual BORIS scoring:
+Leave-one-animal-out (each mouse scored by a model trained only on the others) over 84
+videos from 5 mice (379,083 frames, 420 bouts) against manual BORIS scoring:
 
 | model | features | AP | precision | recall | F1 | bout recall |
 |---|---|---|---|---|---|---|
 | `approach_v1` | all 23 base features | 0.846 | 0.804 | 0.740 | 0.770 | 0.812 |
 | `approach_v1_noconf` | without DLC likelihoods (`tgt_L`, `mouse_L`) | 0.837 | 0.797 | 0.733 | 0.764 | 0.798 |
+| JAABA (MATLAB), same tracks and splits | | 0.804 | 0.48 | 0.89 | 0.62 | |
+| DeepEthogram, from video, same splits | | 0.676 | 0.72 | 0.55 | 0.63 | |
 
-On the same test, real JAABA reached F1 0.62 and DeepEthogram 0.63.
+![Ethograms of one typical held-out video per mouse](docs/figs/ethograms.png)
+
+*One held-out video per mouse, chosen as the one nearest the median pyJAABA F1: typical,
+not best, cases. JAABA over-calls; DeepEthogram (at ~1/10 of its default training
+budget) under-calls.*
+
+What it learned matches the manual labels feature by feature. Approach rate in bins of
+single features, manual labels (black) vs pyJAABA's held-out probability (green):
+
+![Approach rate vs single features](docs/figs/fig_curves.png)
+
+and a three-split tree reproduces 95% of its calls: approach $\approx$ closing on the
+target at more than 8.5 cm/s, within 11.3 cm, head pointed within 68° of it. The
+tree alone reaches F1 0.64; pyJAABA's extra accuracy is detail beyond a few thresholds.
+
+![Depth-3 surrogate tree of the classifier](docs/figs/fig_surrogate_tree.png)
+
+The full validation (per-animal differences, feature importance, how the comparisons
+were run) is in [docs/validation.md](docs/validation.md). In the figures, "GBM"
+(gradient-boosted model) is pyJAABA.
 
 ## Install
 
