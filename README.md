@@ -272,3 +272,7 @@ python tests/test_generic.py    # synthetic project: renamed bodyparts, multi-an
 `--loao`, its leave-one-animal-out predictions) against a reference folder holding
 `frames.pkl`, `winfeat.pkl` and `pred_<behavior>_hgb.pkl` from an earlier run. On the
 validation project above it reproduces them exactly ($\max|\Delta p| = 0$).
+
+## License
+
+MIT; see `LICENSE`.
