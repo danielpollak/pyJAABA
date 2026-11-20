@@ -71,6 +71,7 @@ pyjaaba info     --config p.yaml        # 1. check the config finds your files
 pyjaaba features --config p.yaml        # 2. pose -> features (+ labels from BORIS)
 pyjaaba train    --config p.yaml --cv   # 3. fit a model; --cv also scores it leave-one-animal-out
 pyjaaba predict  --config p.yaml        # 4. score videos -> per-frame scores, bouts, BORIS file
+pyjaaba evaluate --config p.yaml        # optional: score a model on labelled videos it never saw
 pyjaaba verify   --config p.yaml --reference DIR [--loao]   # optional: bit-for-bit check against a reference run
 ```
 
@@ -85,8 +86,8 @@ A flag overrides the config for that run only:
 | `--name NAME` | train | model name instead of `model_name` |
 | `--drop F ...` | train | base features to leave out instead of `drop_features` |
 | `--cv` | train | also run leave-one-animal-out and save its scores |
-| `--model NAME\|PATH` | predict | model to use instead of `model_name` |
-| `--out DIR` | predict | output folder instead of `<output_dir>/predictions/<model>/` |
+| `--model NAME\|PATH` | predict, evaluate | model to use instead of `model_name` |
+| `--out DIR` | predict, evaluate | output folder instead of `<output_dir>/predictions/<model>/` |
 
 ## Inputs
 
@@ -164,11 +165,12 @@ config; its top-level keys are replaced, and the nested `keypoints`, `model`,
 | `video_exclude` | `[]` | patterns to skip, e.g. `["*_concat.avi"]` |
 | `dlc_tag` | required | text identifying the DLC network in the csv name |
 | `dlc_individual` | `null` | multi-animal DLC: the individual to score |
-| `annotation_names` | `["{stem}.avi.tsv"]` | BORIS export names to look for, first match wins |
+| `annotation_names` | `["{stem}.avi.tsv"]` | BORIS export file-name patterns: `{stem}` and `{subject}` are substituted, `*` and `?` are wildcards; more than one match is an error |
 | `behaviors` | `[]` | extra BORIS behaviours to store as labels in the cache |
 | `behavior` | `approach` | the behaviour a model learns and predicts |
 | `output_dir` | required | where `features/`, `models/`, `predictions/` go |
 | `fps_default` | `30.0` | frame rate when a video has no BORIS export |
+| `fps` | `null` | the true frame rate, overriding the BORIS export's `FPS` (for videos whose header frame rate is wrong); noted as a quirk when they differ |
 | `keypoints.snout`, `.neck`, `.center`, `.tailbase` | `snout`, `neck`, `spinecenter`, `tailbase` | DLC bodypart for each role: head axis = snout $-$ neck, body axis = neck $-$ tailbase, velocity from center |
 | `keypoints.quality` | `[]` | bodyparts whose mean likelihood is the `mouse_L` feature (empty: no `mouse_L`) |
 | `keypoints.target` | `[]` | candidate target bodyparts; each frame the most confident is the target (ties to the first). Empty: no target features |
@@ -196,6 +198,7 @@ config; its top-level keys are replaced, and the nested `keypoints`, `model`,
       <stem>_<beh>_bouts.csv     one row per predicted bout
       <stem>_<beh>.tsv           the bouts as a BORIS tabular export
       summary.csv                one row per predicted video
+      evaluation.csv             `evaluate`: scores against the manual labels
 ```
 
 ### `features/index.csv`
@@ -250,6 +253,7 @@ over every frame:
 | `<stem>_<beh>_bouts.csv` | `bout`, `start_frame`, `stop_frame` (exclusive), `n_frames`, `start_s`, `stop_s`, `mean_p` |
 | `<stem>_<beh>.tsv` | the same bouts as BORIS `START`/`STOP` rows (`Description` = pyJAABA, `Comment` = auto); it reads back exactly through pyJAABA's own BORIS parser |
 | `summary.csv` | `subject`, `stem`, `frames`, `pct_behavior`, `bouts`, `in_training_set` (a prediction on a training video is not a test). Rows from earlier runs into the same folder are kept |
+| `evaluation.csv` | from `evaluate`: the same columns as `loao_scores.csv`, one row per subject plus `ALL`, for every completely scored video the model was not trained on. The per-video prediction files are written too |
 
 ## Method
 
@@ -292,7 +296,7 @@ network or recording setup.
 ## Tests
 
 ```bash
-python tests/test_generic.py    # synthetic project: renamed bodyparts, multi-animal csv, no-target, train/CV/predict
+python tests/test_generic.py    # synthetic project: renamed bodyparts, multi-animal csv, no-target, train/CV/predict/evaluate
 ```
 
 `verify` is the real-data check: it compares a config's cached features (and with
