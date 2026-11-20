@@ -34,7 +34,9 @@ def cache_video(v: F.Video, cfg: Config, overwrite=False) -> dict:
         rec["status"] = F.status_of(rows, fps, cfg.behavior)
         rec["n_behavior"] = sum(r[0] == cfg.behavior for r in rows)
     rec["quirks"] = ";".join(sorted(set(quirks)))
-    rec["fps"] = fps if fps else cfg.fps_default
+    rec["fps"] = cfg.fps or fps or cfg.fps_default
+    if cfg.fps and fps and abs(fps - cfg.fps) > 0.5:
+        rec["quirks"] = ";".join(filter(None, [rec["quirks"], f"boris_fps_{fps:g}_overridden"]))
     path = cfg.cache_dir / f"{v.stem}.pkl"
     if path.exists() and not overwrite:
         rec["n_frames"] = len(pd.read_pickle(path))

@@ -4,6 +4,7 @@
     python -m pyjaaba features --config project.yaml [--subjects A B] [--dlc a.csv ...] [--overwrite]
     python -m pyjaaba train    --config project.yaml [--name NAME] [--cv] [--drop F ...]
     python -m pyjaaba predict  --config project.yaml [--model NAME|PATH] [--subjects A B | --dlc a.csv ...]
+    python -m pyjaaba evaluate --config project.yaml [--model NAME|PATH]   # vs BORIS labels of unseen videos
     python -m pyjaaba verify   --config project.yaml --reference DIR [--loao]
 
 Every default (subjects, model name, dropped features) comes from the config; a flag
@@ -30,7 +31,7 @@ def _videos(args, cfg: Config) -> list:
         files = [str(c) for c in p.parent.iterdir()]
         avi = next((f for f in files if F._match(Path(f).name, cfg.video_include)
                     and Path(f).stem == stem), None)
-        vids.append(F.Video(args.label or "unknown", stem, avi, F.find_tsv(stem, files, cfg), str(p)))
+        vids.append(F.Video(args.label or "unknown", stem, avi, F.find_tsv(stem, files, cfg, args.label or ""), str(p)))
     if not vids:
         sys.exit("nothing to do: no videos found (check data_root/subjects, or give --dlc)")
     return vids
@@ -110,6 +111,39 @@ def cmd_predict(args, cfg):
         print(f"\nwrote {out}")
 
 
+def cmd_evaluate(args, cfg):
+    """Score a trained model against the BORIS labels of videos it was not trained on."""
+    model = args.model or cfg.model_name
+    art = M.load(model, cfg)
+    M.check_compatible(art, cfg)
+    name = Path(model).stem
+    out = Path(args.out) if args.out else cfg.predictions_dir / name
+    metas, ps = [], []
+    for v in _videos(args, cfg):
+        r = M.cache_video(v, cfg)
+        if r["status"] not in F.TRAINABLE:
+            print(f"skip {v.stem}: {r['status']} (needs a DLC csv and a complete BORIS export)"); continue
+        if v.stem in art["trained_on"]:
+            print(f"skip {v.stem}: the model was trained on it"); continue
+        base = pd.read_pickle(cfg.cache_dir / f"{v.stem}.pkl")
+        if "y_" + art["behavior"] not in base:
+            print(f"skip {v.stem}: cached without a '{art['behavior']}' label; re-run features --overwrite"); continue
+        p, ps_, calls = M.predict_video(art, base)
+        M.write_outputs(out, v.stem, r["fps"], p, ps_, calls, art["behavior"], v.avi)
+        metas.append(pd.DataFrame({"subject": v.subject, "stem": v.stem, "frame": base.frame.values,
+                                   "y": base["y_" + art["behavior"]].values.astype(int)}))
+        ps.append(p)
+    if not metas:
+        sys.exit("no labelled videos to evaluate")
+    meta, p = pd.concat(metas, ignore_index=True), pd.concat([pd.Series(x) for x in ps]).to_numpy()
+    s = M.scores(meta, p, M.postprocess_of(art))
+    out.mkdir(parents=True, exist_ok=True)
+    s.to_csv(out / "evaluation.csv", index=False)
+    pd.set_option("display.width", 200)
+    print(s.round(3).to_string(index=False))
+    print(f"\nwrote {out / 'evaluation.csv'} (+ predictions for each video)")
+
+
 def cmd_verify(args, cfg):
     from .verify import verify
     verify(cfg, Path(args.reference), loao=args.loao)
@@ -151,6 +185,12 @@ def main(argv=None):
     pp.add_argument("--model", help="model name in <output_dir>/models, or a path (default: config model_name)")
     pp.add_argument("--out", help="output directory (default <output_dir>/predictions/<model>)")
     pp.set_defaults(fn=cmd_predict)
+
+    pe = sub.add_parser("evaluate", help="score a model against BORIS labels of videos it was not trained on")
+    common(pe); sources(pe)
+    pe.add_argument("--model", help="model name in <output_dir>/models, or a path (default: config model_name)")
+    pe.add_argument("--out", help="output directory (default <output_dir>/predictions/<model>)")
+    pe.set_defaults(fn=cmd_evaluate)
 
     pv = sub.add_parser("verify", help="check features (and optionally LOAO) against reference arrays")
     common(pv)

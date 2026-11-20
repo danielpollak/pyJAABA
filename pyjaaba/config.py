@@ -57,7 +57,8 @@ class Config:
     video_exclude: list[str] = field(default_factory=list)
     annotation_names: list[str] = field(default_factory=lambda: ["{stem}.avi.tsv"])
     dlc_individual: str | None = None                     # multi-animal DLC only
-    fps_default: float = 30.0
+    fps_default: float = 30.0                             # when a video has no BORIS export
+    fps: float | None = None                              # true frame rate, overriding BORIS's FPS
     behaviors: list[str] = field(default_factory=list)    # BORIS behaviours to read as labels
     behavior: str = "approach"                            # the one a model scores
     model_name: str = "model"
