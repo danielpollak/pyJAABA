@@ -88,6 +88,13 @@ model: {{max_iter: 30}}
     assert rows and all(r[0] == "hunt" for r in rows)
     print("ok  single- and multi-animal DLC, renamed bodyparts, train/CV/predict, BORIS tsv round trip")
 
+    # evaluate: a model trained on A and B, scored against C's labels
+    main(["train", "--config", str(cfg_path), "--name", "m_ab", "--subjects", "A", "B"])
+    main(["evaluate", "--config", str(cfg_path), "--model", "m_ab", "--subjects", "C"])
+    ev = pd.read_csv(cfg.predictions_dir / "m_ab" / "evaluation.csv").set_index("subject")
+    assert list(ev.index) == ["C", "ALL"] and ev.loc["ALL", "F1"] > 0.8, ev
+    print(f"ok  evaluate on an unseen subject: F1 {ev.loc['ALL', 'F1']:.2f}")
+
     # no target: target-relative features are omitted, the rest still works
     d = F.load_dlc(root / "data" / "A" / "A_take0DLC_fake_net.csv")
     f = F.frame_features(d, 30.0, cfg.keypoints.__class__(snout="nose", neck="head", center="mid",

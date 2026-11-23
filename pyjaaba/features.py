@@ -43,11 +43,13 @@ def _match(name: str, patterns) -> bool:
     return any(fnmatch.fnmatch(name, p) for p in patterns)
 
 
-def find_tsv(stem, files, cfg: Config):
-    names = {n.format(stem=stem) for n in cfg.annotation_names}
-    c = [f for f in files if os.path.basename(f) in names]
+def find_tsv(stem, files, cfg: Config, subject: str = ""):
+    """The video's BORIS export: `annotation_names` are file-name patterns in which
+    {stem} and {subject} are substituted and * / ? are wildcards."""
+    pats = [n.format(stem=glob.escape(stem), subject=glob.escape(subject)) for n in cfg.annotation_names]
+    c = [f for f in files if _match(os.path.basename(f), pats)]
     if len(c) > 1:
-        raise RuntimeError(f"duplicate BORIS export for {stem}: {c}")
+        raise RuntimeError(f"more than one BORIS export for {stem}: {c}")
     return c[0] if c else None
 
 
@@ -72,7 +74,7 @@ def discover(cfg: Config, subjects=None, root=None) -> list[Video]:
                       and not _match(os.path.basename(f), cfg.video_exclude))
         for v in vids:
             stem = os.path.splitext(os.path.basename(v))[0]
-            out.append(Video(subj, stem, v, find_tsv(stem, files, cfg), find_dlc(stem, files, cfg)))
+            out.append(Video(subj, stem, v, find_tsv(stem, files, cfg, subj), find_dlc(stem, files, cfg)))
     return out
 
 
